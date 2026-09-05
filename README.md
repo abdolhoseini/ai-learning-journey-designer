@@ -18,6 +18,14 @@ This project starts one step earlier by asking:
 
 The system then uses these inputs to generate a structured learning journey.
 
+## Live Demo
+
+Explore the working MVP:
+
+[Open the Live Demo](https://ai-learning-journey-designer.vercel.app)
+
+The demo takes a business need, learner profile, skill gap and practical constraints, then generates a structured learning journey with objectives, assessment, behaviour-change goals and impact metrics.
+
 ## Core Workflow
 
 Business Need  
