@@ -1,6 +1,21 @@
- "use client";
+"use client";
 
 import { useState } from "react";
+
+type LearningJourneyResult = {
+  businessNeedSummary: string;
+  audienceProfile: string;
+  identifiedSkillGap: string;
+  learningObjectives: string[];
+  learningJourney: {
+    stage: string;
+    purpose: string;
+    activity: string;
+  }[];
+  assessmentApproach: string;
+  behaviourChangeGoal: string;
+  impactMetrics: string[];
+};
 
 export default function Home() {
   const [started, setStarted] = useState(false);
@@ -12,6 +27,10 @@ export default function Home() {
   const [currentLevel, setCurrentLevel] = useState("");
   const [desiredSkill, setDesiredSkill] = useState("");
   const [constraints, setConstraints] = useState("");
+
+  const [result, setResult] = useState<LearningJourneyResult | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState("");
 
   const questions = [
     {
@@ -61,6 +80,44 @@ export default function Home() {
     },
   ];
 
+  async function generateLearningJourney() {
+    try {
+      setIsGenerating(true);
+      setError("");
+
+      const response = await fetch("/api/generate-learning-journey", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          businessNeed,
+          audience,
+          currentLevel,
+          desiredSkill,
+          constraints,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to generate learning journey.");
+      }
+
+      setResult(data);
+      setShowResult(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while generating the learning journey."
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
   if (!started) {
     return (
       <main className="min-h-screen bg-white px-6 py-16">
@@ -90,7 +147,7 @@ export default function Home() {
     );
   }
 
-  if (showResult) {
+  if (showResult && result) {
     return (
       <main className="min-h-screen bg-gray-50 px-6 py-16">
         <div className="mx-auto max-w-5xl">
@@ -103,58 +160,132 @@ export default function Home() {
           </h1>
 
           <p className="mb-10 max-w-3xl text-lg leading-8 text-gray-600">
-            A structured learning design based on the business need, learner
-            profile, skill gap and practical constraints you provided.
+            A structured learning design generated from the business need,
+            learner profile, skill gap and practical constraints you provided.
           </p>
+
+          <div className="mb-10 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-500">
+              Learning Design Approach
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              {[
+                "Skills-based",
+                "Learner-centred",
+                "Application-focused",
+                "Behaviour-focused",
+                "Impact-oriented",
+              ].map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+
+            <p className="mt-5 max-w-3xl leading-7 text-gray-600">
+              This learning journey is designed to move beyond knowledge
+              transfer by focusing on practical skill application, workplace
+              behaviour and measurable learning impact.
+            </p>
+          </div>
 
           <div className="grid gap-6">
             <ResultCard
               title="Business Need Summary"
-              content={businessNeed}
+              content={result.businessNeedSummary}
             />
 
             <ResultCard
               title="Audience Profile"
-              content={audience}
+              content={result.audienceProfile}
             />
 
             <ResultCard
               title="Identified Skill Gap"
-              content={`Current state: ${currentLevel}\n\nDesired state: ${desiredSkill}`}
+              content={result.identifiedSkillGap}
             />
 
             <ResultCard
               title="Learning Objectives"
-              content={`1. Understand the key concepts related to the target skill.\n2. Apply the skill in realistic workplace scenarios.\n3. Evaluate quality and effectiveness of their own application.\n4. Use the skill consistently in day-to-day work.`}
+              content={result.learningObjectives
+                .map((item, index) => `${index + 1}. ${item}`)
+                .join("\n")}
             />
 
-            <ResultCard
-              title="Learning Journey"
-              content={`1. Awareness and context\n2. Core knowledge\n3. Guided practice\n4. Real-world application\n5. Reflection and reinforcement`}
-            />
+            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-6 text-xl font-semibold text-gray-900">
+                Learning Journey
+              </h2>
+
+              <div className="space-y-5">
+                {result.learningJourney.map((item, index) => (
+                  <div
+                    key={`${item.stage}-${index}`}
+                    className="relative rounded-2xl border border-gray-200 bg-gray-50 p-6"
+                  >
+                    <div className="mb-4 flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-sm font-semibold text-white">
+                        {index + 1}
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-medium uppercase tracking-wider text-gray-500">
+                          Stage {index + 1}
+                        </p>
+
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {item.stage}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="rounded-xl bg-white p-4">
+                        <p className="mb-1 text-sm font-semibold text-gray-900">
+                          Purpose
+                        </p>
+                        <p className="leading-7 text-gray-600">
+                          {item.purpose}
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-white p-4">
+                        <p className="mb-1 text-sm font-semibold text-gray-900">
+                          Activity
+                        </p>
+                        <p className="leading-7 text-gray-600">
+                          {item.activity}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
 
             <ResultCard
               title="Assessment Approach"
-              content={`Use scenario-based assessment, practical exercises and a workplace application task rather than relying only on knowledge quizzes.`}
+              content={result.assessmentApproach}
             />
 
             <ResultCard
               title="Behaviour Change Goal"
-              content={`Learners should demonstrate the target skill consistently in real work and be able to explain when and how to apply it effectively.`}
+              content={result.behaviourChangeGoal}
             />
 
             <ResultCard
               title="Impact Metrics"
-              content={`• Completion and participation\n• Assessment performance\n• Self-reported confidence\n• Workplace application after 30 days\n• Manager or stakeholder feedback\n• Early indicators of improved task quality or efficiency`}
-            />
-
-            <ResultCard
-              title="Constraints Considered"
-              content={constraints}
+              content={result.impactMetrics
+                .map((item) => `• ${item}`)
+                .join("\n")}
             />
           </div>
 
-          <div className="mt-10 flex gap-4">
+          <div className="mt-10 flex flex-wrap gap-4">
             <button
               onClick={() => setShowResult(false)}
               className="rounded-xl border border-gray-300 px-5 py-3 font-medium text-gray-700 transition hover:bg-gray-100"
@@ -172,6 +303,8 @@ export default function Home() {
                 setCurrentLevel("");
                 setDesiredSkill("");
                 setConstraints("");
+                setResult(null);
+                setError("");
               }}
               className="rounded-xl bg-black px-6 py-3 font-medium text-white transition hover:bg-gray-800"
             >
@@ -197,7 +330,7 @@ export default function Home() {
     if (step < 5) {
       setStep(step + 1);
     } else {
-      setShowResult(true);
+      generateLearningJourney();
     }
   }
 
@@ -236,20 +369,31 @@ export default function Home() {
           className="min-h-48 w-full rounded-2xl border border-gray-300 bg-white p-5 text-lg text-gray-900 outline-none transition focus:border-black"
         />
 
+        {error && (
+          <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+            {error}
+          </div>
+        )}
+
         <div className="mt-6 flex items-center justify-between">
           <button
             onClick={handleBack}
-            className="rounded-xl border border-gray-300 px-5 py-3 font-medium text-gray-700 transition hover:bg-gray-100"
+            disabled={isGenerating}
+            className="rounded-xl border border-gray-300 px-5 py-3 font-medium text-gray-700 transition hover:bg-gray-100 disabled:opacity-40"
           >
             Back
           </button>
 
           <button
             onClick={handleContinue}
-            disabled={!currentQuestion.value.trim()}
+            disabled={!currentQuestion.value.trim() || isGenerating}
             className="rounded-xl bg-black px-6 py-3 font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {step < 5 ? "Continue" : "Generate Learning Journey"}
+            {isGenerating
+              ? "Generating..."
+              : step < 5
+              ? "Continue"
+              : "Generate Learning Journey"}
           </button>
         </div>
       </div>
