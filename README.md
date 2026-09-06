@@ -26,6 +26,18 @@ Explore the working MVP:
 
 The demo takes a business need, learner profile, skill gap and practical constraints, then generates a structured learning journey with objectives, assessment, behaviour-change goals and impact metrics.
 
+
+## Screenshots
+
+### Landing Page
+![Landing Page](public/screenshots/landing-page.png)
+
+### Learning Design Wizard
+![Learning Design Wizard](public/screenshots/learning-wizard.png)
+
+### Generated Learning Journey
+![Generated Learning Journey](public/screenshots/learning-output.png)
+
 ## Core Workflow
 
 Business Need  
